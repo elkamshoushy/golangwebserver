@@ -53,12 +53,15 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var post Post
 			var tags string
-			if err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt); err != nil {
+			err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
+			if err != nil {
 				http.Error(w, "Error reading database results", http.StatusInternalServerError)
 				log.Println("Error reading database results", err)
 				return
 			}
-			if err := json.Unmarshal([]byte(tags), &post.Tags); err != nil {
+
+			err = json.Unmarshal([]byte(tags), &post.Tags)
+			if err != nil {
 				http.Error(w, "Error parsing tags", http.StatusInternalServerError)
 				log.Println("Error parsing tags", err)
 				return
@@ -68,7 +71,8 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(posts); err != nil {
+		err = json.NewEncoder(w).Encode(posts)
+		if err != nil {
 			http.Error(w, "Error encoding response", http.StatusInternalServerError)
 			log.Println("Error encoding response", err)
 			return
@@ -115,7 +119,8 @@ func main() {
 	defer db.Close()
 
 	// Pinging db
-	if err := db.Ping(); err != nil {
+	err = db.Ping()
+	if err != nil {
 		log.Fatal("Error pinging database:", err)
 	}
 
@@ -125,7 +130,8 @@ func main() {
 	// Running the server
 	address := "localhost:8080"
 	fmt.Println("Server is running at:", address)
-	if err := http.ListenAndServe(address, nil); err != nil {
+	err = http.ListenAndServe(address, nil)
+	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
