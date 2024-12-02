@@ -67,7 +67,7 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 			posts = append(posts, post)
 		}
 
-		w.Header().Set("Content", "application/json")
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(posts); err != nil {
 			http.Error(w, "Error encoding response", http.StatusInternalServerError)
 			log.Println("Error encoding response", err)
@@ -80,7 +80,7 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Header().Set("Allow", "GET, POST")
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"error": "Method Not Allowed}`))
+		w.Write([]byte(`{"error": "Method Not Allowed"}`))
 	}
 }
 
