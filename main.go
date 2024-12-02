@@ -1,38 +1,133 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"time"
+
+	"github.com/joho/godotenv"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Post struct {
-	Id     int      `json:"id"`
-	Author string   `json:"author"`
-	Title  string   `json:"title"`
-	Tags   []string `json:"tags"`
+	Id        int       `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Category  string    `json:"category"`
+	Tags      []string  `json:"tags"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// func allPostsHandler(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Fprintf(w, "all posts i guess")
-// }
+var db *sql.DB
 
 func postsHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+	switch r.Method {
+	case http.MethodGet:
+		term := r.URL.Query().Get("term")
+		var rows *sql.Rows
+		var err error
+		if term != "" {
+			// Getting posts that have that term in their title, content, category or tags
+			query := "SELECT * FROM posts WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR tags LIKE ?"
+			rows, err = db.Query(query, "%"+term+"%", "%"+term+"%", "%"+term+"%", "%"+term+"%")
 
-	id := query.Get("id")
+		} else {
+			// Getting all posts
+			query := "SELECT * FROM posts"
+			rows, err = db.Query(query)
+		}
 
-	if id != "" {
-		fmt.Fprintf(w, "post who's id is %s", id)
-	} else {
-		fmt.Fprintf(w, "all Posts")
+		if err != nil {
+			http.Error(w, "Error quering the database", http.StatusInternalServerError)
+			log.Println("Error quering the database:", err)
+			return
+		}
+
+		var posts []Post
+		for rows.Next() {
+			var post Post
+			var tags string
+			if err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt); err != nil {
+				http.Error(w, "Error reading database results", http.StatusInternalServerError)
+				log.Println("Error reading database results", err)
+				return
+			}
+			if err := json.Unmarshal([]byte(tags), &post.Tags); err != nil {
+				http.Error(w, "Error parsing tags", http.StatusInternalServerError)
+				log.Println("Error parsing tags", err)
+				return
+			}
+
+			posts = append(posts, post)
+		}
+
+		w.Header().Set("Content", "application/json")
+		if err := json.NewEncoder(w).Encode(posts); err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+			log.Println("Error encoding response", err)
+			return
+		}
+
+	case http.MethodPost:
+		// TODO: Implement the post method
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Header().Set("Allow", "GET, POST")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error": "Method Not Allowed}`))
+	}
+}
+
+func singlePostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// id := r.URL.Query("id")
+		// TODO get it from db
+	case http.MethodDelete:
+		// id := r.URL.Query("id")
+		// TODO delete it from db
+	case http.MethodPut:
+		// id := r.URL.Query("id")
+		// TODO update it from db
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Header().Set("Allow", "GET, PUT, DELETE")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"error": "Method Not Allowed}`))
+	}
+}
+
+func main() {
+	godotenv.Load()
+	dsn := os.Getenv("DB_DSN")
+
+	// Connecting to the db
+	var err error
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal("Error opening database:", err)
+		return
 	}
 
-}
-func main() {
-	http.HandleFunc("/api/v1/posts", postsHandler) // PUT updates post, DELETE post, GET post
+	defer db.Close()
 
-	fmt.Println("Server is running")
-	if err := http.ListenAndServe("localhost:8080", nil); err != nil {
+	// Pinging db
+	if err := db.Ping(); err != nil {
+		log.Fatal("Error pinging database:", err)
+	}
+
+	http.HandleFunc("/posts", postsHandler)           // 'GET' gets all posts or posts with specific term, 'POST' create a post,
+	http.HandleFunc("/posts/{id}", singlePostHandler) // 'GET' gets a post, 'DELETE' delete a post, 'UPDATE' update a post,
+
+	address := "localhost:8080"
+	fmt.Println("Server is running at:", address)
+	if err := http.ListenAndServe(address, nil); err != nil {
 		fmt.Println(err.Error())
 	}
 }
