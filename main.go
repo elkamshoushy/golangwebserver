@@ -77,9 +77,9 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		// TODO: Implement the post method
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Header().Set("Allow", "GET, POST")
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(`{"error": "Method Not Allowed"}`))
 	}
 }
@@ -87,18 +87,15 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// id := r.URL.Query("id")
 		// TODO get it from db
 	case http.MethodDelete:
-		// id := r.URL.Query("id")
 		// TODO delete it from db
 	case http.MethodPut:
-		// id := r.URL.Query("id")
 		// TODO update it from db
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Header().Set("Allow", "GET, PUT, DELETE")
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(`{"error": "Method Not Allowed}`))
 	}
 }
@@ -125,6 +122,7 @@ func main() {
 	http.HandleFunc("/posts", postsHandler)           // 'GET' gets all posts or posts with specific term, 'POST' create a post,
 	http.HandleFunc("/posts/{id}", singlePostHandler) // 'GET' gets a post, 'DELETE' delete a post, 'UPDATE' update a post,
 
+	// Running the server
 	address := "localhost:8080"
 	fmt.Println("Server is running at:", address)
 	if err := http.ListenAndServe(address, nil); err != nil {
