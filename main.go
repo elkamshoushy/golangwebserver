@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -89,9 +90,49 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func singlePostHandler(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/posts/")
+	// TODO: it doesnt catch this error idk why
+	if id == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`"error": "Invalid or missing ID"`))
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
-		// TODO get it from db
+		row := db.QueryRow("SELECT * FROM posts WHERE id = (?)", id)
+		var post Post
+		var tags string
+		err := row.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
+
+		if err != nil {
+			// Checks if no post with that id
+			if err == sql.ErrNoRows {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte(`{"error": "No post with that ID"}`))
+				return
+			} else {
+				http.Error(w, "Error reading database results", http.StatusInternalServerError)
+				log.Println("Error reading database results", err)
+				return
+			}
+		}
+
+		err = json.Unmarshal([]byte(tags), &post.Tags)
+		if err != nil {
+			http.Error(w, "Error parsing tags", http.StatusInternalServerError)
+			log.Println("Error parsing tags", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(post)
+		if err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+			log.Println("Error encoding response", http.StatusInternalServerError)
+			return
+		}
+
 	case http.MethodDelete:
 		// TODO delete it from db
 	case http.MethodPut:
