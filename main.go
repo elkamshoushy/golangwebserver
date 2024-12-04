@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/elkamshushi/golangwebserver/models"
 	"github.com/joho/godotenv"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -39,9 +40,9 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var posts []Post
+		var posts []models.Post
 		for rows.Next() {
-			var post Post
+			var post models.Post
 			var tags string
 			err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
 			if err != nil {
@@ -89,7 +90,7 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		row := db.QueryRow("SELECT * FROM posts WHERE id = (?)", id)
-		var post Post
+		var post models.Post
 		var tags string
 		err := row.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
 
