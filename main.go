@@ -21,12 +21,17 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		term := r.URL.Query().Get("term")
+		jsonTerm, err := json.Marshal(term)
+		if err != nil {
+			http.Error(w, "Error formating term to json", http.StatusInternalServerError)
+			log.Println("Error formating term to json:", err)
+			return
+		}
 		var rows *sql.Rows
-		var err error
 		if term != "" {
 			// Getting posts that have that term in their title, content, category or tags
-			query := "SELECT * FROM posts WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR tags LIKE ?"
-			rows, err = db.Query(query, "%"+term+"%", "%"+term+"%", "%"+term+"%", "%"+term+"%")
+			query := "SELECT * FROM posts WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR JSON_CONTAINS(tags, ?)"
+			rows, err = db.Query(query, "%"+term+"%", "%"+term+"%", "%"+term+"%", string(jsonTerm))
 
 		} else {
 			// Getting all posts
@@ -43,18 +48,18 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		var posts []models.Post
 		for rows.Next() {
 			var post models.Post
-			var tags string
-			err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
+			var jsonTags []byte
+			err := rows.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &jsonTags, &post.CreatedAt, &post.UpdatedAt)
 			if err != nil {
 				http.Error(w, "Error reading database results", http.StatusInternalServerError)
 				log.Println("Error reading database results", err)
 				return
 			}
 
-			err = json.Unmarshal([]byte(tags), &post.Tags)
+			err = json.Unmarshal(jsonTags, &post.Tags)
 			if err != nil {
-				http.Error(w, "Error parsing tags", http.StatusInternalServerError)
-				log.Println("Error parsing tags", err)
+				http.Error(w, "Error Unmarshaling jsonTags to []string", http.StatusInternalServerError)
+				log.Println("Error Unmarshaling jsonTags to []string", err)
 				return
 			}
 
