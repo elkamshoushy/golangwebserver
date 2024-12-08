@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -75,7 +76,50 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodPost:
-		// TODO: Implement the post method
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error while reading request's body", http.StatusInternalServerError)
+			log.Println("Error while reading request's body", err)
+			return
+		}
+		defer r.Body.Close()
+		var post models.Post
+		err = json.Unmarshal(body, &post)
+		if err != nil {
+			http.Error(w, "Error parsing JSON", http.StatusInternalServerError)
+			log.Println("Error parsing JSON", err)
+			return
+		}
+		jsonTags, err := json.Marshal(post.Tags)
+		if err != nil {
+			http.Error(w, "Error Marshaling []string tags to json", http.StatusInternalServerError)
+			log.Println("Error Marshaling []string tags to json", err)
+		}
+
+		query := "INSERT INTO posts (title, content, category, tags) values (?, ?, ?, ?)"
+		result, err := db.Exec(query, &post.Title, &post.Content, &post.Category, &jsonTags)
+		if err != nil {
+			http.Error(w, "Error inserting into Database", http.StatusInternalServerError)
+			log.Println("Error inserting into Database", err)
+			return
+		}
+		lastInsertedId, err := result.LastInsertId()
+		if err != nil {
+			http.Error(w, "Error getting last inserted id", http.StatusInternalServerError)
+			log.Println("Error gettinglast inserted id", err)
+			return
+		}
+		ptr := &post
+		ptr.Id = int(lastInsertedId)
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(post)
+		if err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+			log.Println("Error encoding response", err)
+			return
+		}
+
 	default:
 		w.Header().Set("Allow", "GET, POST")
 		w.Header().Set("Content-Type", "application/json")
