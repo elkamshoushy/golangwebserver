@@ -234,7 +234,7 @@ func main() {
 	// Running the server
 	address := "localhost:8080"
 	fmt.Println("Server is running at:", address)
-	err = http.ListenAndServe(address, nil)
+	err = http.ListenAndServe(address, r)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
