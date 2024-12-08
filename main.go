@@ -140,8 +140,8 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		row := db.QueryRow("SELECT * FROM posts WHERE id = (?)", id)
 		var post models.Post
-		var tags string
-		err := row.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &tags, &post.CreatedAt, &post.UpdatedAt)
+		var jsonTags []byte
+		err := row.Scan(&post.Id, &post.Title, &post.Content, &post.Category, &jsonTags, &post.CreatedAt, &post.UpdatedAt)
 
 		if err != nil {
 			// Checks if no post with that id
@@ -157,7 +157,7 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = json.Unmarshal([]byte(tags), &post.Tags)
+		err = json.Unmarshal(jsonTags, &post.Tags)
 		if err != nil {
 			http.Error(w, "Error parsing tags", http.StatusInternalServerError)
 			log.Println("Error parsing tags", err)
