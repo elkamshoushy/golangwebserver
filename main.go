@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/elkamshushi/golangwebserver/models"
 	"github.com/gorilla/mux"
@@ -130,7 +129,10 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func singlePostHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/posts/")
+	// Getting id from url path
+	vars := mux.Vars(r)
+	id := vars["id"]
+
 	switch r.Method {
 	case http.MethodGet:
 		row := db.QueryRow("SELECT * FROM posts WHERE id = (?)", id)
