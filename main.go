@@ -197,7 +197,7 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"message": "The post is deleted successfully"}`))
 	case http.MethodPut:
-		// TODO update it from db
+		// TODO: update it from db
 	default:
 		w.Header().Set("Allow", "GET, PUT, DELETE")
 		w.Header().Set("Content-Type", "application/json")
