@@ -131,12 +131,6 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 
 func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/posts/")
-	// TODO: it doesnt catch this error idk why
-	if id == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`"error": "Invalid or missing ID"`))
-		return
-	}
 	switch r.Method {
 	case http.MethodGet:
 		row := db.QueryRow("SELECT * FROM posts WHERE id = (?)", id)
@@ -228,6 +222,11 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+	r.HandleFunc("/posts/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`"error": "Invalid or missing id"`))
+	})
 	r.HandleFunc("/posts", postsHandler)           // 'GET' gets all posts or posts with specific term, 'POST' create a post,
 	r.HandleFunc("/posts/{id}", singlePostHandler) // 'GET' gets a post, 'DELETE' delete a post, 'UPDATE' update a post,
 
