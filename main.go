@@ -20,6 +20,7 @@ var db *sql.DB
 
 func postsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
+	// Will get all posts or posts with specific term in its title, content, category or tags
 	case http.MethodGet:
 		term := r.URL.Query().Get("term")
 		jsonTerm, err := json.Marshal(term)
@@ -29,13 +30,13 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var rows *sql.Rows
+		// Getting posts that have that term in their title, content, category or tags
 		if term != "" {
-			// Getting posts that have that term in their title, content, category or tags
 			query := "SELECT * FROM posts WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR JSON_CONTAINS(tags, ?)"
 			rows, err = db.Query(query, "%"+term+"%", "%"+term+"%", "%"+term+"%", string(jsonTerm))
 
-		} else {
 			// Getting all posts
+		} else {
 			query := "SELECT * FROM posts"
 			rows, err = db.Query(query)
 		}
@@ -45,7 +46,7 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error quering the database:", err)
 			return
 		}
-
+		// Slice of posts that will be encoded to the response
 		var posts []models.Post
 		for rows.Next() {
 			var post models.Post
@@ -63,7 +64,6 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("Error Unmarshaling jsonTags to []string", err)
 				return
 			}
-
 			posts = append(posts, post)
 		}
 
