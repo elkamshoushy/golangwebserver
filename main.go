@@ -173,7 +173,29 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodDelete:
-		// TODO delete it from db
+		deleteQuery := "DELETE FROM posts WHERE id = ?"
+		result, err := db.Exec(deleteQuery, id)
+		if err != nil {
+			http.Error(w, "Error while deleting from database", http.StatusInternalServerError)
+			log.Println("Error while deleting from database", err)
+			return
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			http.Error(w, "Error while checking affected rows", http.StatusInternalServerError)
+			log.Println("Error while checking affected rows", err)
+			return
+		}
+
+		if rowsAffected == 0 {
+			http.Error(w, "Post not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "The post is deleted successfully"}`))
 	case http.MethodPut:
 		// TODO update it from db
 	default:
