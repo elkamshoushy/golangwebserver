@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/elkamshushi/golangwebserver/models"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -226,8 +227,9 @@ func main() {
 		log.Fatal("Error pinging database:", err)
 	}
 
-	http.HandleFunc("/posts", postsHandler)           // 'GET' gets all posts or posts with specific term, 'POST' create a post,
-	http.HandleFunc("/posts/{id}", singlePostHandler) // 'GET' gets a post, 'DELETE' delete a post, 'UPDATE' update a post,
+	r := mux.NewRouter()
+	r.HandleFunc("/posts", postsHandler)           // 'GET' gets all posts or posts with specific term, 'POST' create a post,
+	r.HandleFunc("/posts/{id}", singlePostHandler) // 'GET' gets a post, 'DELETE' delete a post, 'UPDATE' update a post,
 
 	// Running the server
 	address := "localhost:8080"
