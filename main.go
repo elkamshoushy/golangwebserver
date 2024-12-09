@@ -113,6 +113,7 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 		ptr.Id = int(lastInsertedId)
 
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(post)
 		if err != nil {
 			http.Error(w, "Error encoding response", http.StatusInternalServerError)
