@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/elkamshushi/golangwebserver/models"
 	"github.com/gorilla/mux"
@@ -195,7 +196,66 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"message": "The post is deleted successfully"}`))
 	case http.MethodPut:
-		// TODO: update it from db
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error while reading request's body", http.StatusInternalServerError)
+			log.Println("Error while reading request's body", err)
+			return
+		}
+		defer r.Body.Close()
+		var post models.Post
+		err = json.Unmarshal(body, &post)
+		if err != nil {
+			http.Error(w, "Error parsing JSON", http.StatusInternalServerError)
+			log.Println("Error parsing JSON", err)
+			return
+		}
+		jsonTags, err := json.Marshal(post.Tags)
+		if err != nil {
+			http.Error(w, "Error Marshaling []string tags to json", http.StatusInternalServerError)
+			log.Println("Error Marshaling []string tags to json", err)
+		}
+
+		query := "UPDATE posts SET title = ?, content = ?, category = ?, tags = ? WHERE ID = ?"
+		result, err := db.Exec(query, &post.Title, &post.Content, &post.Category, &jsonTags, id)
+		if err != nil {
+			http.Error(w, "Error updating into Database", http.StatusInternalServerError)
+			log.Println("Error updating into Database", err)
+			return
+		}
+
+		lastEdited, err := result.RowsAffected()
+		if err != nil {
+			http.Error(w, "Error while checking affected rows", http.StatusInternalServerError)
+			log.Println("Error while checking affected rows", err)
+			return
+		}
+
+		if lastEdited == 0 {
+			http.Error(w, "Post not found", http.StatusNotFound)
+			return
+		}
+
+		// Converting URL id from string to int so we can set it to the post id
+		intID, err := strconv.Atoi(id)
+		if err != nil {
+			http.Error(w, "Error converting URL id from string to int", http.StatusInternalServerError)
+			log.Println("Error converting URL id from string to int")
+			return
+		}
+
+		// Setting the post id
+		ptr := &post
+		ptr.Id = intID
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(post)
+		if err != nil {
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
+			log.Println("Error encoding response", err)
+			return
+		}
 	default:
 		w.Header().Set("Allow", "GET, PUT, DELETE")
 		w.Header().Set("Content-Type", "application/json")
