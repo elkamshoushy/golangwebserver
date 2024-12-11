@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/elkamshushi/golangwebserver/models"
 	"github.com/gorilla/mux"
@@ -247,6 +248,8 @@ func singlePostHandler(w http.ResponseWriter, r *http.Request) {
 		// Setting the post id
 		ptr := &post
 		ptr.Id = intID
+		// TODO: fix the returned time "createdAt, updatedAt"
+		ptr.UpdatedAt = time.Now()
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
