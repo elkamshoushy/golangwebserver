@@ -48,6 +48,8 @@ func postsHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error quering the database:", err)
 			return
 		}
+		defer rows.Close()
+
 		// Slice of posts that will be encoded to the response
 		var posts []models.Post
 		for rows.Next() {
