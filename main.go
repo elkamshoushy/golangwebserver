@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/elkamshushi/golangwebserver/models"
+	"github.com/elkamshoushy/golangwebserver/models"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 

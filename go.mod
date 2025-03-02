@@ -1,4 +1,4 @@
-module github.com/elkamshushi/golangwebserver
+module github.com/elkamshoushy/golangwebserver
 
 go 1.23.3
 

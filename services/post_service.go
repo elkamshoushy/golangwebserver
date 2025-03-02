@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/elkamshushi/golangwebserver/models"
+	"github.com/elkamshoushy/golangwebserver/models"
 )
 
 type PostService struct {
